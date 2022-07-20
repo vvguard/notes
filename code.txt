@@ -23,6 +23,29 @@ class Solution(object):
             return(False)
             
             
+  704. Binary Search          
+ class Solution(object):
+    def search(self, nums, target):
+        """
+        :type nums: List[int]
+        :type target: int
+        :rtype: int
+        """
+        
+        l = 0
+        r = len(nums) 
+        if len(nums) == 0:
+            return(-1)
+        if nums[0] == target:
+            return(0)
             
-            
+        while (l < r) and (r != l + 1) : 
+            if target > nums[  (l + r) // 2 ]:
+                l = (l + r) // 2 
+            elif target < nums[  (l + r) // 2 ] :
+                r = (l + r) // 2 
+            elif target == nums[  (l + r) // 2 ]:
+                return((l + r) // 2)
+        return(-1)
+           
 
