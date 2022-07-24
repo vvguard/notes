@@ -129,3 +129,44 @@ class Solution(object):
         return( l1 )
  
  
+ 
+ 
+ 238. Product of Array Except Self
+ class Solution(object):
+    def productExceptSelf(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: List[int]
+        """
+
+#         pre = [0] * len(nums)
+#         prefix = 1
+#         post = [0] * len(nums)
+#         postfix = 1
+        
+#         for i in range(len(nums) ):
+#             pre[i] = prefix
+#             prefix  *= nums[i] 
+            
+#         for i in range( len(nums)-1, -1,-1):
+#             post[i] = postfix
+#             postfix  *= nums[i] 
+#             print(nums[i])
+#         print(pre)
+        
+#         print(post)
+#         return([ i*j for i,j in zip(pre, post)])
+        pre = [0] * len(nums)
+        prefix = 1
+        postfix = 1
+        
+        for i in range(len(nums) ):
+            pre[i] = prefix
+            prefix  *= nums[i] 
+            
+        for i in range( len(nums)-1, -1,-1):
+            pre[i] = pre[i] * postfix
+            postfix  *= nums[i] 
+   
+
+        return(pre)
