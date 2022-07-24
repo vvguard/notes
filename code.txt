@@ -102,3 +102,30 @@ class Solution(object):
         return(out)
             
         
+ Top K Frequent Elements
+ 
+ class Solution(object):
+    def topKFrequent(self, nums, k):
+        """
+        :type nums: List[int]
+        :type k: int
+        :rtype: List[int]
+        """
+        
+        def def_value():
+            return 0
+        res = defaultdict(def_value)
+        
+        l1 = []
+        
+        for i in nums:
+            res[i] += 1
+            
+            
+        for i  in range(k):
+            p = max(res, key=res.get)
+            l1 = l1 + [p]
+            res[p] = 0
+        return( l1 )
+ 
+ 
