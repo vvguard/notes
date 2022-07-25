@@ -170,3 +170,42 @@ class Solution(object):
    
 
         return(pre)
+        
+        
+        
+    3. Longest Substring Without Repeating Characters
+    class Solution(object):
+    def lengthOfLongestSubstring(self, s):
+        """
+        :type s: str
+        :rtype: int
+        """
+        dict1= {}
+        i = 0
+        j = 1
+        if len(s) == 0:
+            return(0)
+        maxc = 1
+        dict1[s[0]] = 0
+        while j < len(s):
+            if s[j]  not in dict1.keys() or dict1[s[j]] < i:
+                maxc = max( j-i +1  , maxc)
+
+                # print(i)
+                # print(j)
+                # print(maxc)
+                # print('---')
+                dict1[s[j]] = j
+                j +=1                
+            else:
+                
+                i = dict1[s[j] ] +1
+                dict1[s[j]] = j
+                j  += 1
+#                 print(i)
+#                 print(j)
+#                 print(dict1)
+#                 print('^^^^')            
+               
+                
+        return(maxc)
