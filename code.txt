@@ -1,357 +1,68 @@
-20. Valid Parentheses
-class Solution(object):
-    def isValid(self, s):
-        """
-        :type s: str
-        :rtype: bool
-        """
-        stack = []
-        
-        maps = {')':'(', '}':'{',']':'['}
-        
-        for i in s:
-            if i in maps:
-                if stack and stack[-1] == maps[i]:
-                    stack.pop()
-                else:
-                    return(False)
-            else:
-                stack.append(i)
-        if len(stack) == 0:
-            return(True)
-        else:
-            return(False)
-            
-            
-  704. Binary Search          
- class Solution(object):
-    def search(self, nums, target):
-        """
-        :type nums: List[int]
-        :type target: int
-        :rtype: int
-        """
-        
-        l = 0
-        r = len(nums) 
-        if len(nums) == 0:
-            return(-1)
-        if nums[0] == target:
-            return(0)
-            
-        while (l < r) and (r != l + 1) : 
-            if target > nums[  (l + r) // 2 ]:
-                l = (l + r) // 2 
-            elif target < nums[  (l + r) // 2 ] :
-                r = (l + r) // 2 
-            elif target == nums[  (l + r) // 2 ]:
-                return((l + r) // 2)
-        return(-1)
-           
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import numpy as np
+import networkx as nx
+import pandas as pd
 
+# Define the Graph Attention Network class
+class GAT(nn.Module):
+    def __init__(self, in_dim, hidden_dim, out_dim, num_heads):
+        super(GAT, self).__init__()
+        self.num_heads = num_heads
+        self.linear_layers = nn.ModuleList()
+        self.linear_layers.append(nn.Linear(in_dim, hidden_dim))
+        self.attention_layers = nn.ModuleList()
+        for i in range(num_heads):
+            self.attention_layers.append(nn.Linear(hidden_dim, 1))
+        self.out_layer = nn.Linear(num_heads * hidden_dim, out_dim)
 
+    def forward(self, x, adj):
+        h = F.relu(self.linear_layers[0](x))
+        attns = []
+        for i in range(self.num_heads):
+            attns.append(self.attention_layers[i](h))
+        attns = torch.cat(attns, dim=1).view(-1, self.num_heads, adj.size()[0])
+        attns = F.softmax(attns, dim=2)
+        h_prime = torch.bmm(attns, h.unsqueeze(2)).squeeze()
+        return self.out_layer(h_prime)
 
+# Define a function to create the input features for the GAT model
+def create_features(G):
+    nodes = list(G.nodes())
+    num_nodes = len(nodes)
+    features = np.zeros((num_nodes, 3))
+    for i in range(num_nodes):
+        features[i,:] = nodes[i]
+    return torch.FloatTensor(features)
 
-49. Group Anagrams
+# Define a function to create the adjacency matrix for the GAT model
+def create_adjacency(G):
+    return torch.FloatTensor(nx.to_numpy_matrix(G))
 
-class Solution(object):
-    def groupAnagrams(self, strs):
-        """
-        :type strs: List[str]
-        :rtype: List[List[str]]
-        """
-        out = []
-        def anagram(word1, word2, l1):
-            if len(word1) == len(word2):
-                dict1 = {key: 0 for key in word1}
-                dict2 = {key: 0 for key in word2}
-                for i in word1:
-                    dict1[i] += 1
-               
-                for j in word2:
-                    dict2[j] += 1
-            
-                if dict1 == dict2:
-                    l1 = l1 + [word2]
-                    return(l1)
-                else:
-                    return(l1)
-            else:
-                return(l1)
-            
-            
-        while len(strs) != 0:
-            l1 = [strs[0]]
-   
-            for i in strs[1:]:
-          
-                l1 = anagram(strs[0], i, l1)
-                
-                
-                
-         
-            out = out + [list(l1 )]
-            # print('-----')
-            # print(l1)
-            # print('-----')
-            # print(out)
-            # print('##########')
-            for k in l1:
-                strs.remove(k)
-                 
-        return(out)
-            
-        
- Top K Frequent Elements
- 
- class Solution(object):
-    def topKFrequent(self, nums, k):
-        """
-        :type nums: List[int]
-        :type k: int
-        :rtype: List[int]
-        """
-        
-        def def_value():
-            return 0
-        res = defaultdict(def_value)
-        
-        l1 = []
-        
-        for i in nums:
-            res[i] += 1
-            
-            
-        for i  in range(k):
-            p = max(res, key=res.get)
-            l1 = l1 + [p]
-            res[p] = 0
-        return( l1 )
- 
- 
- 
- 
- 238. Product of Array Except Self
- class Solution(object):
-    def productExceptSelf(self, nums):
-        """
-        :type nums: List[int]
-        :rtype: List[int]
-        """
+# Read in the data from a CSV file using Pandas
+df = pd.read_csv('data.csv')
 
-#         pre = [0] * len(nums)
-#         prefix = 1
-#         post = [0] * len(nums)
-#         postfix = 1
-        
-#         for i in range(len(nums) ):
-#             pre[i] = prefix
-#             prefix  *= nums[i] 
-            
-#         for i in range( len(nums)-1, -1,-1):
-#             post[i] = postfix
-#             postfix  *= nums[i] 
-#             print(nums[i])
-#         print(pre)
-        
-#         print(post)
-#         return([ i*j for i,j in zip(pre, post)])
-        pre = [0] * len(nums)
-        prefix = 1
-        postfix = 1
-        
-        for i in range(len(nums) ):
-            pre[i] = prefix
-            prefix  *= nums[i] 
-            
-        for i in range( len(nums)-1, -1,-1):
-            pre[i] = pre[i] * postfix
-            postfix  *= nums[i] 
-   
+# Create a graph object using NetworkX
+G = nx.Graph()
+for index, row in df.iterrows():
+    node = tuple(row)
+    G.add_node(node)
+    for prev_node in G.nodes:
+        if prev_node != node:
+            G.add_edge(prev_node, node, weight=1.0)
 
-        return(pre)
-        
-        
-        
-    3. Longest Substring Without Repeating Characters
-    class Solution(object):
-    def lengthOfLongestSubstring(self, s):
-        """
-        :type s: str
-        :rtype: int
-        """
-        dict1= {}
-        i = 0
-        j = 1
-        if len(s) == 0:
-            return(0)
-        maxc = 1
-        dict1[s[0]] = 0
-        while j < len(s):
-            if s[j]  not in dict1.keys() or dict1[s[j]] < i:
-                maxc = max( j-i +1  , maxc)
+# Create the GAT model and set hyperparameters
+in_dim = 3
+hidden_dim = 16
+out_dim = 8
+num_heads = 4
+model = GAT(in_dim, hidden_dim, out_dim, num_heads)
 
-                # print(i)
-                # print(j)
-                # print(maxc)
-                # print('---')
-                dict1[s[j]] = j
-                j +=1                
-            else:
-                
-                i = dict1[s[j] ] +1
-                dict1[s[j]] = j
-                j  += 1
-#                 print(i)
-#                 print(j)
-#                 print(dict1)
-#                 print('^^^^')            
-               
-                
-        return(maxc)
+# Create the input features and adjacency matrix for the GAT model
+features = create_features(G)
+adj = create_adjacency(G)
 
-
-
-
-
-
-567. Permutation in String
-class Solution(object):
-    def checkInclusion(self, s1, s2):
-        """
-        :type s1: str
-        :type s2: str
-        :rtype: bool
-        """
-        
-        length = len(s1)
-        
-        l = 0
-        r = length 
-        
-        dict1 = {}
-        dict2 = {}
-        for i in s1:
-            dict1[i] = dict1.get(i,0) + 1 
-        
-        while r<= len(s2):
-            dict2 = {}
-            for j in s2[l:r]:
-                dict2[j] = dict2.get(j,0) + 1 
-                
-            if dict2 == dict1:
-                return(True)
-            else:
-                r += 1
-                l +=1
-                
-        return(False)
-
-
-
-167. Two Sum II - Input Array Is Sorted
-class Solution(object):
-    def twoSum(self, numbers, target):
-        """
-        :type numbers: List[int]
-        :type target: int
-        :rtype: List[int]
-        """
-        
-        
-        l = 0 
-        r = len(numbers) - 1
-        
-        if ( numbers[l] + numbers[r] ) == target:
-            return(l+1, r+1)
-        while True:
-            if (numbers[l] + numbers[r]) > target:
-                r -= 1
-            elif (numbers[l] + numbers[r]) < target:
-                l += 1
-            else:
-                return(l+1, r+1)
-
-
-
-252. Meeting Rooms
-class Solution(object):
-    def canAttendMeetings(self, intervals):
-        """
-        :type intervals: List[List[int]]
-        :rtype: bool
-        """
-        
-        list1 = [0] * (10**4 +1)
-        
-        for i in intervals:
-            
-            if sum( list1[i[0]:i[1]]) == 0:
-                list1[i[0]:i[1]] = [1] * (i[1] - i[0])
-                # print(i[0])
-                # print(i[1])
-                # print((i[1] - i[0]))
-                # print('-----')
-            elif i[0] == 11452:
-                return(True)
-            else:
-                return(False)
-            # print(list1)
-            
-        return(True)
-
-253. Meeting Rooms II
-class Solution(object):
-    def minMeetingRooms(self, intervals):
-        """
-        :type intervals: List[List[int]]
-        :rtype: int
-        """
-        if len(intervals)== 1:
-            return(1)
-        
-        count = 0
-        res = 0
-        
-        start = sorted([ i[0] for i in intervals ])
-        end = sorted([i[1] for i in intervals])
-        
-        s = 0
-        e = 0
-        
-        while s < len(intervals) :
-            if start[s] < end[e]:
-                count += 1
-                s += 1
-            else:
-                count -= 1
-                e += 1
-                
-            res = max(res,count)
-        return(res)
-        
-        
-        
-  57. Insert Interval     
-    class Solution(object):
-    def insert(self, intervals, newInterval):
-        """
-        :type intervals: List[List[int]]
-        :type newInterval: List[int]
-        :rtype: List[List[int]]
-        """
-        res = []
-        for i in range(len(intervals)):
-            
-            if newInterval[1] < intervals[i][0]:
-                res.append(newInterval)
-                return(res + intervals[1:])
-                
-            elif newInterval[0] > intervals[i][1]:
-                res.append(intervals[i])
-                
-            else:
-                newInterval = [min(newInterval[0], intervals[i][0]) , max(newInterval[1], intervals[i][1])]
-        res.append(newInterval)
-        return(res)
-
+# Run the model on the input data and print the node embeddings
+node_embeddings = model(features, adj)
+print("Node embeddings: ", node_embeddings.detach().numpy())
