@@ -1,68 +1,414 @@
+import os
+import math
+from copy import deepcopy
+from pathlib import Path
+import numpy as np
+import pandas as pd
+from scipy import stats
+import networkx as nx
+
+import torch as th
+import torch.nn as nn
+from torch import optim
+import torch.nn.functional as F
+from sklearn.metrics import f1_score
+
+
+import matplotlib.pyplot as plt
+
+
+
+import datetime
+import errno
+import os
+import pickle
+import random
+from pprint import pprint
+
+import dgl
+
+import numpy as np
+import torch
+from dgl.data.utils import _get_dgl_url, download, get_download_dir
+from scipy import io as sio, sparse
+
+import warnings
+warnings.filterwarnings('ignore')
+
+os.environ['DGLBACKEND'] = 'pytorch'
+import dgl
+from dgl.nn import GraphConv
+from dgl.dataloading import DataLoader
+print(f"DGL version: {dgl.__version__}.  CUDA version: {th.version.cuda}")
+
+
+device = 'cuda' if th.cuda.is_available() else 'cpu'
+device = th.device(device)
+print(device)
+
+df_traintest = pd.read_csv('/root/vipul/dataset/wrangled_data.csv', index_col = [0])
+print(df_traintest.shape)
+print(df_traintest['dataset'].value_counts())
+
+df_traintest2 = df_traintest.drop(['trans_date_trans_time', 'first', #'customer_id',
+                                   'last', 'gender', 'street', 'city', 'state', 'zip', 
+                                   'lat', 'long', 'city_pop', 'job', 'dob', 
+                                   'unix_time', 'merch_lat', 'merch_long',
+                                   'month', 'day', 'week'], axis=1).copy()
+
+
+
+def column_index(series, offset=0):
+    return {k: v+offset for v, k in enumerate(series.value_counts().index.values)}
+
+txn2idx = {v: idx for idx, v in enumerate(df_traintest2['trans_num'].values)}
+acct2idx = column_index(df_traintest2['cc_num'] , offset = len(txn2idx) )
+merc2idx = column_index(df_traintest2['merchant'] , offset = len(txn2idx) + len(acct2idx) )
+
+df_traintest2['txnIdx'] = df_traintest2['trans_num'].map(txn2idx)
+df_traintest2 = df_traintest2.sort_values(by='txnIdx')
+df_traintest2['acctIdx'] = df_traintest2['cc_num'].map(acct2idx)
+df_traintest2['mercIdx'] = df_traintest2['merchant'].map(merc2idx)
+df_traintest2 = df_traintest2.sort_values(by='txnIdx')
+
+node_id_cols = ['txnIdx', 'acctIdx', 'mercIdx']
+
+from itertools import combinations
+edge_dict = dict()
+for src_type, dst_type in combinations(node_id_cols, 2):
+    fwd = (src_type, f'{src_type}-{dst_type}', dst_type)
+    bwd = (dst_type, f'{dst_type}-{src_type}', src_type)
+    print(fwd)
+    print(bwd)
+    print('-'*50)
+    
+    edges = df_traintest2[[src_type, dst_type]].drop_duplicates().values
+    src = edges[:,0]
+    dst = edges[:,1]
+
+    edge_dict[fwd] = (th.tensor(src), th.tensor(dst))
+    edge_dict[bwd] = (th.tensor(dst), th.tensor(src))
+
+hg = dgl.heterograph(edge_dict)
+
+y_txn = df_traintest2['is_fraud'].values
+# baseline = y_txn[y_txn>=0].mean()
+baseline = y_txn[df_traintest2['dataset']=='train'].mean()
+
+label_feat = dict()
+for ntype in hg.ntypes:
+    if ntype=='txnIdx':
+        continue
+    label_feat[ntype] = th.zeros(hg.number_of_nodes(ntype))+baseline
+label_feat['txnIdx'] = th.tensor(np.nan_to_num(y_txn, nan=baseline)).float()
+
+hg.ndata['label'] = label_feat
+
+df_traintest2['age_bins'] = pd.cut(x=df_traintest2['age'], bins=[0, 12, 21, 29, 39, 49, 59, 69, 79, 100])
+df_traintest2['age_bins'].unique()
+categorical = ['category', 'dayweek', 'age_bins']
+
+
+X_ohe = pd.get_dummies(df_traintest2[categorical].astype(str), drop_first=True).values
+print(X_ohe.shape)
+
+num_var = [ 'dist', 'is_weekend', 'is_daytime', 'is_evening', 'is_night',
+       'cc_txns_cnt_24H_rolling', 'cc_txns_cnt_24H_7day_rolling_avg',
+       'cc_txns_cnt_24H_7day_zscore', 'cc_txns_cnt_24H_30day_rolling_avg',
+       'cc_txns_cnt_24H_30day_zscore', 'cc_txns_amt_24H_7day_zscore',
+       'cc_txns_amt_24H_30day_zscore', 'is_whole_dollar', 'yj_amt',
+       'yj_amt_cc_txns_amt_24H_rolling_sum',
+       'yj_amt_cc_txns_amt_24H_7day_rolling_avg',
+       'yj_amt_cc_txns_amt_24H_30day_rolling_avg']
+X_num = df_traintest2[num_var].to_numpy()
+X_num = (X_num - X_num.mean(axis=0))/(X_num.max(axis=0) - X_num.min(axis=0))
+
+X = np.concatenate([X_ohe, X_num], axis=1)
+
+def get_binary_mask(total_size, indices):
+    mask = torch.zeros(total_size)
+    mask[indices] = 1
+    return mask.byte()
+
+
+df_traintest2 = df_traintest2.reset_index()
+
+
+test_idx = np.array(df_traintest2[df_traintest2['dataset'] == 'test'].index )
+
+from sklearn.model_selection import train_test_split
+
+train_idx, val_idx  = train_test_split( df_traintest2['dataset'].index , test_size=0.2)
+val_idx = np.array(val_idx)
+train_idx = np.array(train_idx)
+
+
+num_nodes = hg.num_nodes("txnIdx")
+train_mask = get_binary_mask(num_nodes, train_idx)
+val_mask = get_binary_mask(num_nodes, val_idx)
+test_mask = get_binary_mask(num_nodes, test_idx)
+
+num_classes = 2
+labels = torch.LongTensor( list( df_traintest2['is_fraud']) )
+features = torch.FloatTensor(X)
+features.shape
+
+
+from sklearn.metrics import f1_score
+
+def score(logits, labels):
+    _, indices = torch.max(logits, dim=1)
+    prediction = indices.long().cpu().numpy()
+    labels = labels.cpu().numpy()
+
+    accuracy = (prediction == labels).sum() / len(prediction)
+    micro_f1 = f1_score(labels, prediction, average="micro")
+    macro_f1 = f1_score(labels, prediction, average="macro")
+
+    return accuracy, micro_f1, macro_f1
+
+
+def evaluate(model, g, features, labels, mask, loss_func):
+    model.eval()
+    with torch.no_grad():
+        logits = model(g, features)
+    loss = loss_func(logits[mask], labels[mask])
+    accuracy, micro_f1, macro_f1 = score(logits[mask], labels[mask])
+
+    return loss, accuracy, micro_f1, macro_f1
+# from model_hetero import HAN
+meta_paths = [ ['txnIdx-mercIdx','mercIdx-txnIdx'],[ 'txnIdx-acctIdx','acctIdx-txnIdx', ]]
+
+
+import dgl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
-import networkx as nx
-import pandas as pd
+from dgl.nn.pytorch import GATConv
 
-# Define the Graph Attention Network class
-class GAT(nn.Module):
-    def __init__(self, in_dim, hidden_dim, out_dim, num_heads):
-        super(GAT, self).__init__()
-        self.num_heads = num_heads
-        self.linear_layers = nn.ModuleList()
-        self.linear_layers.append(nn.Linear(in_dim, hidden_dim))
-        self.attention_layers = nn.ModuleList()
-        for i in range(num_heads):
-            self.attention_layers.append(nn.Linear(hidden_dim, 1))
-        self.out_layer = nn.Linear(num_heads * hidden_dim, out_dim)
 
-    def forward(self, x, adj):
-        h = F.relu(self.linear_layers[0](x))
-        attns = []
-        for i in range(self.num_heads):
-            attns.append(self.attention_layers[i](h))
-        attns = torch.cat(attns, dim=1).view(-1, self.num_heads, adj.size()[0])
-        attns = F.softmax(attns, dim=2)
-        h_prime = torch.bmm(attns, h.unsqueeze(2)).squeeze()
-        return self.out_layer(h_prime)
+class SemanticAttention(nn.Module):
+    def __init__(self, in_size, hidden_size=128):
+        super(SemanticAttention, self).__init__()
 
-# Define a function to create the input features for the GAT model
-def create_features(G):
-    nodes = list(G.nodes())
-    num_nodes = len(nodes)
-    features = np.zeros((num_nodes, 3))
-    for i in range(num_nodes):
-        features[i,:] = nodes[i]
-    return torch.FloatTensor(features)
+        self.project = nn.Sequential(
+            nn.Linear(in_size, hidden_size),
+            nn.Tanh(),
+            nn.Linear(hidden_size, 1, bias=False),
+        )
 
-# Define a function to create the adjacency matrix for the GAT model
-def create_adjacency(G):
-    return torch.FloatTensor(nx.to_numpy_matrix(G))
+    def forward(self, z):
+        w = self.project(z).mean(0)  # (M, 1)
+        beta = torch.softmax(w, dim=0)  # (M, 1)
+        beta = beta.expand((z.shape[0],) + beta.shape)  # (N, M, 1)
 
-# Read in the data from a CSV file using Pandas
-df = pd.read_csv('data.csv')
+        return (beta * z).sum(1)  # (N, D * K)
 
-# Create a graph object using NetworkX
-G = nx.Graph()
-for index, row in df.iterrows():
-    node = tuple(row)
-    G.add_node(node)
-    for prev_node in G.nodes:
-        if prev_node != node:
-            G.add_edge(prev_node, node, weight=1.0)
 
-# Create the GAT model and set hyperparameters
-in_dim = 3
-hidden_dim = 16
-out_dim = 8
-num_heads = 4
-model = GAT(in_dim, hidden_dim, out_dim, num_heads)
+class HANLayer(nn.Module):
+    """
+    HAN layer.
 
-# Create the input features and adjacency matrix for the GAT model
-features = create_features(G)
-adj = create_adjacency(G)
+    Arguments
+    ---------
+    meta_paths : list of metapaths, each as a list of edge types
+    in_size : input feature dimension
+    out_size : output feature dimension
+    layer_num_heads : number of attention heads
+    dropout : Dropout probability
 
-# Run the model on the input data and print the node embeddings
-node_embeddings = model(features, adj)
-print("Node embeddings: ", node_embeddings.detach().numpy())
+    Inputs
+    ------
+    g : DGLGraph
+        The heterogeneous graph
+    h : tensor
+        Input features
+
+    Outputs
+    -------
+    tensor
+        The output feature
+    """
+
+    def __init__(self, meta_paths, in_size, out_size, layer_num_heads, dropout):
+        super(HANLayer, self).__init__()
+
+        # One GAT layer for each meta path based adjacency matrix
+        self.gat_layers = nn.ModuleList()
+        for i in range(len(meta_paths)):
+            self.gat_layers.append(
+                GATConv(
+                    in_size,
+                    out_size,
+                    layer_num_heads,
+                    dropout,
+                    dropout,
+                    activation=F.elu,
+                    allow_zero_in_degree=True,
+                )
+            )
+        self.semantic_attention = SemanticAttention(
+            in_size=out_size * layer_num_heads
+        )
+        self.meta_paths = list(tuple(meta_path) for meta_path in meta_paths)
+
+        self._cached_graph = None
+        self._cached_coalesced_graph = {}
+
+    def forward(self, g, h):
+        semantic_embeddings = []
+
+        if self._cached_graph is None or self._cached_graph is not g:
+            self._cached_graph = g
+            self._cached_coalesced_graph.clear()
+            for meta_path in self.meta_paths:
+                self._cached_coalesced_graph[
+                    meta_path
+                ] = dgl.metapath_reachable_graph(g, meta_path)
+
+        for i, meta_path in enumerate(self.meta_paths):
+            new_g = self._cached_coalesced_graph[meta_path]
+            # print('----------------')
+            # print(i)
+            # print(meta_path)
+            # print('----------------')
+            # print('----------------------------------')
+            semantic_embeddings.append(self.gat_layers[i](new_g, h.to( device )  ).flatten(1))
+        semantic_embeddings = torch.stack(
+            semantic_embeddings, dim=1
+        )  # (N, M, D * K)
+
+        return self.semantic_attention(semantic_embeddings)  # (N, D * K)
+
+
+class HAN(nn.Module):
+    def __init__(
+        self, meta_paths, in_size, hidden_size, out_size, num_heads, dropout
+    ):
+        super(HAN, self).__init__()
+
+        self.layers = nn.ModuleList()
+        self.layers.append(
+            HANLayer(meta_paths, in_size, hidden_size, num_heads[0], dropout)
+        )
+        for l in range(1, len(num_heads)):
+            self.layers.append(
+                HANLayer(
+                    meta_paths,
+                    hidden_size * num_heads[l - 1],
+                    hidden_size,
+                    num_heads[l],
+                    dropout,
+                )
+            )
+        self.predict = nn.Linear(hidden_size * num_heads[-1], out_size)
+
+    def forward(self, g, h):
+        for gnn in self.layers:
+            h = gnn(g, h)
+
+        return self.predict(h)
+class EarlyStopping(object):
+    def __init__(self, patience=10):
+        dt = datetime.datetime.now()
+        self.filename = "early_stop_{}_{:02d}-{:02d}-{:02d}.pth".format(
+            dt.date(), dt.hour, dt.minute, dt.second
+        )
+        self.patience = patience
+        self.counter = 0
+        self.best_acc = None
+        self.best_loss = None
+        self.early_stop = False
+
+    def step(self, loss, acc, model):
+        if self.best_loss is None:
+            self.best_acc = acc
+            self.best_loss = loss
+            self.save_checkpoint(model)
+        elif (loss > self.best_loss) and (acc < self.best_acc):
+            self.counter += 1
+            print(
+                f"EarlyStopping counter: {self.counter} out of {self.patience}"
+            )
+            if self.counter >= self.patience:
+                self.early_stop = True
+        else:
+            if (loss <= self.best_loss) and (acc >= self.best_acc):
+                self.save_checkpoint(model)
+            self.best_loss = np.min((loss, self.best_loss))
+            self.best_acc = np.max((acc, self.best_acc))
+            self.counter = 0
+        return self.early_stop
+
+    def save_checkpoint(self, model):
+        """Saves model when validation loss decreases."""
+        torch.save(model.state_dict(), self.filename)
+
+    def load_checkpoint(self, model):
+        """Load the latest checkpoint."""
+        model.load_state_dict(torch.load(self.filename))
+g = hg
+model = HAN(
+    meta_paths= meta_paths ,
+    in_size=features.shape[1],
+    hidden_size=8,
+    out_size=num_classes,
+    num_heads=[8],
+    dropout=0.6,
+).to(device)
+g = g.to( device )
+stopper = EarlyStopping(patience=10)
+loss_fcn = torch.nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(
+        model.parameters(), lr=0.001, weight_decay=0.001
+    )
+
+
+for epoch in range(100):
+    print(f'---------- epoch {epoch} ----------')
+    model.train()
+    logits = model(g, features)
+    loss = loss_fcn(logits[train_mask].to( device ) , labels[train_mask].to( device ) )
+
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+
+    train_acc, train_micro_f1, train_macro_f1 = score(
+        logits[train_mask], labels[train_mask]
+    )
+    val_loss, val_acc, val_micro_f1, val_macro_f1 = evaluate(
+        model.to( device ) , g, features.to( device ) , labels.to( device ) , val_mask.to( device ) , loss_fcn.to( device ) 
+    )
+    early_stop = stopper.step(val_loss.data.item(), val_acc, model)
+
+    print(
+        "Epoch {:d} | Train Loss {:.4f} | Train Micro f1 {:.4f} | Train Macro f1 {:.4f} | "
+        "Val Loss {:.4f} | Val Micro f1 {:.4f} | Val Macro f1 {:.4f}".format(
+            epoch + 1,
+            loss.item(),
+            train_micro_f1,
+            train_macro_f1,
+            val_loss.item(),
+            val_micro_f1,
+            val_macro_f1,
+        )
+    )
+
+    if early_stop:
+        break
+
+stopper.load_checkpoint(model)
+test_loss, test_acc, test_micro_f1, test_macro_f1 = evaluate(
+    model.to( device ), g, features.to( device ), labels.to( device ), test_mask.to( device ), loss_fcn.to( device )
+)
+print(
+    "Test loss {:.4f} | Test Micro f1 {:.4f} | Test Macro f1 {:.4f}".format(
+        test_loss.item(), test_micro_f1, test_macro_f1
+    )
+)
+
+
+
+
+
