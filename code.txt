@@ -27,3 +27,25 @@ Here are the explanations for the provided configurations:
 7. `spark.port.maxRetries`:
    - Function: Specifies the maximum number of port retries for Spark applications.
    - Explanation: The `spark.port.maxRetries` configuration sets the
+
+
+
+Sure! Here are three bullet points about Spark Context and Glue Context:
+
+Spark Context:
+
+1. Core component: Spark Context (SparkContext) is the entry point for any Spark functionality. It represents the connection to a Spark cluster and allows the application to access various Spark features.
+
+2. Job coordination: Spark Context manages the execution of Spark jobs in a distributed environment. It coordinates the tasks, manages resources, and ensures fault tolerance and scalability.
+
+3. Programming interface: Spark Context provides a programming interface for interacting with Spark. It enables the application to create RDDs (Resilient Distributed Datasets), perform transformations and actions on the data, and utilize the various libraries and modules available in Spark.
+
+Glue Context:
+
+1. ETL capabilities: Glue Context (GlueContext) is a specialized variant of Spark Context provided by AWS Glue. It extends the functionality of Spark by integrating it with AWS Glue's ETL (Extract, Transform, Load) capabilities.
+
+2. Data catalog integration: Glue Context integrates with AWS Glue's Data Catalog, which is a metadata repository for storing and managing the metadata of various data sources. It allows easy discovery, organization, and access to the data.
+
+3. Data source connectors: Glue Context provides built-in connectors to various data sources, including databases, data lakes, and streaming platforms. It simplifies the process of reading and writing data from and to different sources, enabling seamless data integration and processing.
+
+Note: The specific capabilities and features of Spark Context and Glue Context may vary depending on the version of Apache Spark and AWS Glue being used.
