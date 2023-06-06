@@ -1,79 +1,22 @@
-# Set the batch size
-batch_size = 32
+Hello JJ,
 
-# Create a DataLoader for training data
-train_dataset = torch.utils.data.TensorDataset(features, labels, train_mask)
-train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+I hope this email finds you well.
 
-# Create a DataLoader for validation data
-val_dataset = torch.utils.data.TensorDataset(features, labels, val_mask)
-val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size)
+During the PiuHI Transition call on 16th May, you requested a tentative date for when I will begin utilizing AWS for PHI rescoring.
 
-# Create a DataLoader for testing data
-test_dataset = torch.utils.data.TensorDataset(features, labels, test_mask)
-test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size)
+I attempted to use AWS for this month in order to address some bugs and ensure code reusability. However, I discovered that AWS is reading data directly from the S3 bucket instead of querying it from the cloud database/HIVE (similar to Domino).
 
-# Training loop
-for epoch in range(100):
-    print(f'---------- epoch {epoch} ----------')
-    model.train()
-    total_loss = 0.0
-    total_train_micro_f1 = 0.0
-    total_train_macro_f1 = 0.0
-    
-    for batch in train_dataloader:
-        batch_features, batch_labels, batch_mask = batch
-        batch_features = batch_features.to(device)
-        batch_labels = batch_labels.to(device)
-        batch_mask = batch_mask.to(device)
+As mentioned in the PHI transition meeting, we have not yet completed the parity check on the output. I have highlighted the discrepancies in the outputs during the Transition meeting.
 
-        logits = model(g, batch_features)
-        loss = loss_fcn(logits[batch_mask], batch_labels)
+I wanted to provide you with an update on the next steps:
+1) I will make the necessary code modifications to retrieve data from HIVE and perform the rescoring.
+2) I will complete the parity checking by running both the AWS and Domino pipelines on the same day and comparing the outputs.
 
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+I estimate that these tasks will require one sprint to be completed.
 
-        total_loss += loss.item()
-        train_acc, train_micro_f1, train_macro_f1 = score(logits[batch_mask], batch_labels)
-        total_train_micro_f1 += train_micro_f1
-        total_train_macro_f1 += train_macro_f1
+Please feel free to reach out if you have any questions or require further clarification.
 
-    average_train_loss = total_loss / len(train_dataloader)
-    average_train_micro_f1 = total_train_micro_f1 / len(train_dataloader)
-    average_train_macro_f1 = total_train_macro_f1 / len(train_dataloader)
+Thank you for your attention to this matter.
 
-    model.eval()
-    total_val_loss = 0.0
-    total_val_acc = 0.0
-    total_val_micro_f1 = 0.0
-    total_val_macro_f1 = 0.0
-
-    with torch.no_grad():
-        for batch in val_dataloader:
-            batch_features, batch_labels, batch_mask = batch
-            batch_features = batch_features.to(device)
-            batch_labels = batch_labels.to(device)
-            batch_mask = batch_mask.to(device)
-
-            logits = model(g, batch_features)
-            val_loss = loss_fcn(logits[batch_mask], batch_labels)
-
-            total_val_loss += val_loss.item()
-            val_acc, val_micro_f1, val_macro_f1 = score(logits[batch_mask], batch_labels)
-            total_val_acc += val_acc
-            total_val_micro_f1 += val_micro_f1
-            total_val_macro_f1 += val_macro_f1
-
-    average_val_loss = total_val_loss / len(val_dataloader)
-    average_val_acc = total_val_acc / len(val_dataloader)
-    average_val_micro_f1 = total_val_micro_f1 / len(val_dataloader)
-    average_val_macro_f1 = total_val_macro_f1 / len(val_dataloader)
-
-    early_stop = stopper.step(average_val_loss, average_val_acc, model)
-
-    print(
-        "Epoch {:d} | Train Loss {:.4f} | Train Micro f1 {:.4f} | Train Macro f1 {:.4f} | "
-        "Val Loss {:.4f} | Val Acc {:.4f} | Val Micro f1 {:.4f} | Val Macro f1 {:.4f}".format(
-            epoch + 1,
-            average_train
+Best regards,
+PK
