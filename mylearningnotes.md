@@ -7,4 +7,4 @@
 1. one
 2. two
 
-[link text](www.google.com)
+[link text](/code2.txt)
