@@ -8,3 +8,4 @@
 2. two
 
 [link text](/code2.txt)
+![img](/image.jpg)
