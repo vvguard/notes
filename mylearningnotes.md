@@ -49,8 +49,8 @@ To adapt the model to a specific target task, a second supervised learning step,
 
 #### How to use chatgpt effectively
 - Role , context , task
-- use words liek
-- Sub Correct this to standard English: She no went to the market.
+- use words like
+  - Sub Correct this to standard English: She no went to the market.
 
 
 
