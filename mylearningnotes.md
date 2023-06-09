@@ -3,7 +3,10 @@
 
 ### date 9 June 2023
 
-#### 
+#### LLM and their architecture
+
+- **cross attention** : The cross-attention helps the model to determine which parts of an input text are important for accurately predicting the next word in the output text.
+- **Self-attention** : Self-attention, on the other hand, refers to a model’s ability to focus on different parts of its input when processing it.
 
 
 
