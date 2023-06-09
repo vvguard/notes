@@ -51,9 +51,12 @@ To adapt the model to a specific target task, a second supervised learning step,
 - Role , context , task
 - use words like
   - Sub Correct this to standard English: She no went to the market.
-
-
-
+  - Sub Summarize this for a second-grade student: Jupiter is the fifth planet [...]
+  - Sub A neutron star [...] atomic nuclei. Tl;dr
+  - Sub  # Python 3 
+          def hello(x): 
+          print('hello '+str(x)) 
+          # Explanation of what the code does
 
 
 <!-- 
