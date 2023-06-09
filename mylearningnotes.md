@@ -42,7 +42,15 @@ To adapt the model to a specific target task, a second supervised learning step,
 - GPT-4 was trained with the last knowledge update in September 2021. 
 
 
+### Using chat gpt
 
+- Chat GPT playground
+- Open ai api
+
+#### How to use chatgpt effectively
+- Role , context , task
+- use words liek
+- sub Correct this to standard English: She no went to the market.
 
 
 
