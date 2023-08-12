@@ -8,9 +8,11 @@
 
 FAISS (Facebook AI Similarity Search) is a Python library developed by Facebook AI Research for efficient similarity search and clustering tasks on large datasets. It's designed to work with high-dimensional data, such as vectors representing images, audio, text embeddings, and more. 
 
-- Purpose: FAISS is primarily used for searching and retrieving similar items in a dataset efficiently. This is particularly valuable in applications like image and video search, recommendation systems, natural language processing, and more.
 
-- Efficiency: FAISS is optimized for speed and scalability. It employs various techniques such as index structures, quantization, and multi-threading to enable fast similarity searches even on massive datasets.
+- Efficiency: FAISS is optimized for speed and scalability. Some techniques used to enable fast similarity searches even on massive datasets are
+- Sub index structures,
+-
+-   quantization, and multi-threading .
 
 - Indexing: FAISS provides different indexing structures like Product Quantization (PQ), Inverted File, Hierarchical Navigable Small World (HNSW), and more. These structures organize the data in a way that speeds up the search process by reducing the number of comparisons needed.
 
