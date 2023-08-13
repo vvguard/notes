@@ -95,3 +95,28 @@ While both vector quantization and partitioning contribute to optimizing similar
 
 
 
+
+
+In FAISS, the `IndexIVFPQ` class is used to create an index structure based on the Inverted File with Product Quantization (IVFPQ) technique. This index is particularly useful for efficient similarity search in high-dimensional spaces using quantization and inverted file structures. When initializing an instance of `IndexIVFPQ`, you need to provide several parameters to configure its behavior. Here are the parameters you can specify:
+
+1. **d**: (int) The dimensionality of the vectors you'll be indexing.
+
+2. **nlist**: (int) The number of inverted lists or clusters to create. This parameter controls the granularity of partitioning your dataset.
+
+3. **m**: (int) The number of centroids to use for each sub-quantizer in the Product Quantization part. Larger values may lead to better accuracy but require more memory and computational resources.
+
+4. **nbits**: (int) The number of bits for encoding each sub-quantizer's index. A higher value may provide better accuracy but consumes more memory.
+
+5. **train_on_gpu**: (bool) Whether to perform training on GPU. Training is used to learn the centroids in the PQ stage. Enabling this can speed up the training process if you have a GPU available.
+
+6. **use_float16**: (bool) Whether to use 16-bit floating-point representation for quantized vectors. This can reduce memory usage but might impact accuracy.
+
+7. **quantizer**: (faiss.Index) The quantizer index to be used for assigning vectors to inverted lists. This can be an instance of another index type, like `IndexFlatL2` or `IndexHNSW`.
+
+8. **use_precomputed_table**: (bool) Whether to use precomputed codes for searching. Enabling this can speed up the search process but requires additional memory.
+
+9. **indexes_options**: (str) Options for the sub-indexes used in the IVFPQ structure. This can include settings like 'PQ32' or 'PQ64' to define the sub-quantizer's behavior.
+
+These parameters collectively define how the `IndexIVFPQ` index will be constructed, how quantization and partitioning will be performed, and how searches will be executed. It's important to choose appropriate values based on the characteristics of your data, your computational resources, and your desired balance between search accuracy and speed.
+
+Remember that this is a high-level overview of the parameters, and it's always a good idea to refer to the official FAISS documentation for the most up-to-date and detailed information on using `IndexIVFPQ`.
