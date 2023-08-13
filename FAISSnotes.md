@@ -147,3 +147,19 @@ In FAISS, the `IndexIVFFlat` class is used to create an index structure based on
 These parameters collectively define how the `IndexIVFFlat` index will be constructed, how data will be partitioned and quantized, and how similarity search operations will be performed. The choice of parameters should be based on the characteristics of your data, your computational resources, and your desired balance between search accuracy and speed.
 
 Keep in mind that this is a high-level overview of the parameters, and you should refer to the official FAISS documentation for the most up-to-date and detailed information on using `IndexIVFFlat`.
+
+
+####################################################################################################################################  
+In FAISS, the `nprobe` parameter is used to control the number of inverted lists (clusters) that are visited during a search operation in an index structure like `IndexIVFFlat` or `IndexIVFPQ`. It determines how exhaustive the search will be within the index's partitioned data.
+
+When you perform a search using an index with the `nprobe` parameter, here's what happens:
+
+1. **Search Process**: The search process begins by selecting a certain number of inverted lists (clusters) to examine. The `nprobe` parameter determines how many of these lists will be considered.
+
+2. **Candidates**: For each selected inverted list, the nearest neighbors of the query are retrieved from that list. These candidates are potentially similar vectors that could be the nearest neighbors.
+
+3. **Refinement**: After candidates are retrieved from multiple lists, the actual nearest neighbors are refined through further comparison. This refinement step helps ensure that the true nearest neighbors are accurately identified.
+
+The `nprobe` parameter allows you to balance between search speed and accuracy. Using a higher value for `nprobe` means that more inverted lists will be examined during the search, potentially leading to better accuracy but at the cost of increased computational time. Conversely, using a lower value for `nprobe` can speed up the search process but might reduce the likelihood of finding the absolute nearest neighbors, especially in cases where they are distributed across multiple lists.
+
+In summary, the `nprobe` parameter in FAISS controls the number of inverted lists that are examined during a search operation, impacting the balance between search speed and accuracy. Choosing an appropriate value for `nprobe` depends on your specific use case, dataset characteristics, and the trade-off you're willing to make between search quality and efficiency.
