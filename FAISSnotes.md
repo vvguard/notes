@@ -120,3 +120,30 @@ In FAISS, the `IndexIVFPQ` class is used to create an index structure based on t
 These parameters collectively define how the `IndexIVFPQ` index will be constructed, how quantization and partitioning will be performed, and how searches will be executed. It's important to choose appropriate values based on the characteristics of your data, your computational resources, and your desired balance between search accuracy and speed.
 
 Remember that this is a high-level overview of the parameters, and it's always a good idea to refer to the official FAISS documentation for the most up-to-date and detailed information on using `IndexIVFPQ`.
+
+
+-------------------------------------------------------------------------------------------------------------------
+
+In FAISS, the `IndexIVFFlat` class is used to create an index structure based on the Inverted File with Flat (IVFFlat) technique. This index is useful for efficient similarity search and retrieval of nearest neighbors in high-dimensional spaces using an inverted file structure. When initializing an instance of `IndexIVFFlat`, you need to provide several parameters to configure its behavior. Here are the parameters you can specify:
+
+1. **d**: (int) The dimensionality of the vectors you'll be indexing.
+
+2. **nlist**: (int) The number of inverted lists or clusters to create. This parameter controls the granularity of partitioning your dataset.
+
+3. **quantizer**: (faiss.Index) The quantizer index to be used for assigning vectors to inverted lists. This can be an instance of another index type, like `IndexFlatL2` or `IndexHNSW`.
+
+4. **metric_type**: (int) The metric type to be used for distance calculations. This parameter determines the distance function used to compare vectors. Common values include `faiss.METRIC_L2` for Euclidean distance and `faiss.METRIC_INNER_PRODUCT` for inner product similarity.
+
+5. **shard_type**: (int) The shard type to be used. This parameter affects how data is distributed across devices in a multi-GPU setup. Common values include `faiss.IO_32_BITS` and `faiss.IO_64_BITS`.
+
+6. **shard_threshold**: (int) The threshold for partitioning the data across devices. Vectors with IDs below this threshold will be assigned to one device, and vectors with IDs equal to or above this threshold will be assigned to another device in a multi-GPU setup.
+
+7. **shard_bits**: (int) The number of bits to use for data partitioning across devices in a multi-GPU setup.
+
+8. **use_float16**: (bool) Whether to use 16-bit floating-point representation for vectors in the index. This can reduce memory usage but might impact accuracy.
+
+9. **index**: (faiss.Index) The index to be used within each inverted list. This can be an instance of another index type, like `IndexFlatL2` or `IndexHNSW`.
+
+These parameters collectively define how the `IndexIVFFlat` index will be constructed, how data will be partitioned and quantized, and how similarity search operations will be performed. The choice of parameters should be based on the characteristics of your data, your computational resources, and your desired balance between search accuracy and speed.
+
+Keep in mind that this is a high-level overview of the parameters, and you should refer to the official FAISS documentation for the most up-to-date and detailed information on using `IndexIVFFlat`.
