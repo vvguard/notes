@@ -32,6 +32,8 @@ Indexes refer to data structures that are specifically designed to enable effici
 - 
 - **Index Composition** : FAISS also provides the ability to combine different index structures to create composite indexes. For example, a combination of an IVF index and a PQ index can leverage the advantages of both structures.
 
+https://gist.github.com/jamescalam/7117aa92235a7f52141ad0654795aa48
+
 
 
 
