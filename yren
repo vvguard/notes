@@ -1,19 +1,2 @@
 PHI
-The year began with the implementation of automated PHI processes within the Domino framework. Nevertheless, the project faced a series of unexpected challenges, including the discontinuation of crucial input data sources (for ex. WMS data and iig_plancvrghist data etc.). I proactively managed these changes, identified suitable solutions, and executed the necessary adaptations. This resulted in the continuous and punctual availability of up-to-date key performance indicators (KPIs) for PHI to meet the needs of our stakeholders.
-Mlops: A significant endeavor entailed the migration of PHI from Domino to AWS. My principal focus was on aiding the MLOps team and conducting comprehensive output parity assessments. Additionally, I contributed hands-on efforts by diagnosing and rectifying code issues within AWS to facilitate a swift transition.
 
-Otherthan day to day:
-
-FAISS/Large language model, as projects pertaining to LLM emerged within the laboratory, I took the initiative to investigate open-source tools, technologies, and packages that could harness the capabilities of LLM. Subsequently, I applied these resources within the VG environment and meticulously documented their essential functionalities for the benefit of fellow crew members.
-Among the notable examples are the following: 1) The FAISS vector datastore, 2) An offline Llama model with a size of 7 GB, and 3) The incorporation of PySpark in Glue Interactive Session. The documentation and code produced in these instances have been actively employed by other crew members.
-As part of an innovation project, I actively contributed to the development of Heterogeneous Graph Attention Networks for the purpose of enhancing fraud detection capabilities. Additionally, I participated in a concise presentation to a wider audience within the CAI group.
-
-RFP:
-Facilitated a rapid turnaround in data parsing, subsequently expediting the process of model development. This endeavor entailed the composition of extensive code for parsing word documents and Excel files, each presenting distinct question and answer formats.
-The SOAP API represented a novel framework that demanded my rapid comprehension. In a concise timeframe, I developed a comprehensive codebase to facilitate the navigation and update of recently modified files within our database.
-
-
-Look ahead:
-Improved coordination with various teams, particularly when third parties are involved, to efficiently execute tasks and proactively anticipate potential obstacles.
-Opportunities:
-Enhancing collaboration with the EAIR team and the RIG ML team.
