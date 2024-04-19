@@ -1,0 +1,26 @@
+HIGHLIGHTS
+
+•	Spearheaded enhancements for RFP Project, establishing a systematic deployment schedule:
+o	Demonstrated a commitment to advancing technical proficiency and delving into project intricacies.
+o	Implemented modularization of the codebase for improved scalability and maintainability.
+o	Made enhancements aligned with product owner’s vision and client requirements which ensured seamless integration each time.
+o	Proactively managed risk to prevent downtime for end-users, enhancing application resilience.
+o	Recognized for contributions with a short speaking engagement at CAI's town hall.
+
+•	Integrating external application:
+o	Coordinated with multiple teams to establish a connection between AWS and external API, ensuring smooth data flow.
+o	To mitigate the risk always had a backup proxy connection to API for ad-hoc data download and model training.
+o	Streamlined the code to run from any platform, without any manual effort and keep track of recently modified documents.
+o	All these modifications will enable frequent refresh of input data for RFP, which in turn will lead to better client satisfaction.
+•	Working diligently with Model Ops team to enable CICD endpoint deployment:
+o	Current CICD process for deployment of endpoint cannot be used to deploy endpoint for our specific use case.
+o	Engaged with the Model Ops team to understand the endpoint deployment process and determine optimal way to use the CICD process for our project.
+o	I am working on using a new (CICD) architecture for endpoint deployment. Since RFP will be the first use case, I am helping Model Ops team address bugs and enhance functionality.
+
+Opportunities:
+•	I would like to maximize my mentorship skills and leverage the opportunity given to me as a mentor to TLP.
+•	I intend to fully capitalize on the DS Apprenticeship program to broaden my skill set and expertise in data science.
+
+Look ahead:
+•	Sustain the progress achieved in Phase 1 of the RFP project, seamlessly transitioning into Phase 2.
+o	Having acquired valuable expertise in SOAP API, Endpoints, parsing, and other areas during the RFP phase 1, I am eager to synergize this knowledge with my GenAl skills to ensure the delivery of a robust Phase 2 product.
