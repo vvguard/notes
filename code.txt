@@ -60,3 +60,64 @@ The provided code performs the following actions:
 2. `glueContext = GlueContext(sc)`: This line creates an instance of the `GlueContext` class using the Spark context `sc`. The `GlueContext` is a special context provided by AWS Glue that extends the functionality of the Spark context and provides additional capabilities for working with AWS Glue services, such as the Glue Data Catalog.
 
 3. `spark = glueContext.spark_session`: This line creates a Spark session (`spark`) using the `spark_session` property of the `glueContext`. The Spark session is the primary entry point for executing Spark operations and provides a unified interface for working with data in various formats and sources. The `spark` object obtained here can be used to interact with data using Spark APIs and perform distributed data processing tasks.
+
+
+
+
+
+
+
+Sure, here are five-line summaries for each of the Docker commands you provided:
+
+1. **`docker build . --file ./DOCKERFILE -t image1`**
+   - This command builds a Docker image from a Dockerfile located in the current directory (`.`).
+   - The `--file` option specifies the name and path of the Dockerfile to use (`./DOCKERFILE`).
+   - The `-t` flag tags the resulting image with the name `image1`.
+   - This tag helps identify and manage the image later.
+   - The build process reads the Dockerfile instructions to create the image.
+
+2. **`docker run -dit image1`**
+   - This command runs a container from the Docker image named `image1`.
+   - The `-d` flag runs the container in detached mode, which means it runs in the background.
+   - The `-i` flag keeps STDIN open even if not attached, useful for interactive sessions.
+   - The `-t` flag allocates a pseudo-TTY, providing a terminal interface for the container.
+   - The combination of `-it` allows you to interact with the container's terminal.
+
+3. **`docker ps -a`**
+   - This command lists all Docker containers on the host system.
+   - The `-a` flag includes both running and stopped containers in the output.
+   - The output provides details such as container IDs, names, statuses, and creation times.
+   - This command is useful for managing and troubleshooting containers.
+   - Without the `-a` flag, only running containers are listed.
+
+4. **`docker exec -it <name> bash`**
+   - This command starts an interactive bash shell session inside a running container.
+   - The `-i` flag keeps STDIN open, allowing interaction with the shell.
+   - The `-t` flag allocates a pseudo-TTY, enabling a terminal interface.
+   - Replace `<name>` with the name or ID of the target container.
+   - This is useful for debugging, managing, or interacting with the container directly.
+
+
+
+Sure, here is the five-line summary for the provided Docker command:
+
+5. **`docker run -p 8080:8080 --rm image1 serve`**
+   - This command runs a container from the Docker image named `image1` and executes the `serve` command inside the container.
+   - The `-p 8080:8080` flag maps port 8080 on the host to port 8080 in the container, allowing access to services on that port.
+   - The `--rm` flag ensures that the container is automatically removed after it stops.
+   - This setup is useful for running applications that need to be accessed via the web or other network services.
+   - By specifying `serve`, the container runs this command, typically used to start a web server or similar service.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
