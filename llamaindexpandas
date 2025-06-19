@@ -33,3 +33,23 @@ Present the results as a ranked list with insights.
 
 response = agent.chat(query)
 print(response)
+
+
+!pip install llama-index llama-index-experimental
+
+import logging
+import sys
+from IPython.display import Markdown, display
+
+import pandas as pd
+from llama_index.experimental.query_engine import PandasQueryEngine
+
+
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
+
+
+
+
+
+
