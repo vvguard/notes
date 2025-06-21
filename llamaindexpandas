@@ -1,152 +1,81 @@
-Getting started#
-Workflows are built into LlamaIndex core, so to use them all you need is
+A key feature of Workflows is their enablement of branching and looping logic, more simply and flexibly than graph-based approaches.
+
+Loops in workflows#
+To create a loop, we'll take our example MyWorkflow from the previous tutorial and add one new custom event type. We'll call it LoopEvent but again it can have any arbitrary name.
 
 
-pip install llama-index-core
-During development you will probably find it helpful to visualize your workflow; you can use our built-in visualizer for this by installing it:
+class LoopEvent(Event):
+    loop_output: str
+Now we'll import random and modify our step_one function to randomly decide either to loop or to continue:
 
 
-pip install llama-index-utils-workflow
-Dependencies#
-The minimal dependencies for a workflow are:
-
-
-from llama_index.core.workflow import (
-    StartEvent,
-    StopEvent,
-    Workflow,
-    step,
-)
-Single-step workflow#
-A workflow is usually implemented as a class that inherits from Workflow. The class can define an arbitrary number of steps, each of which is a method decorated with @step. Here is the simplest possible workflow:
-
-
-class MyWorkflow(Workflow):
-    @step
-    async def my_step(self, ev: StartEvent) -> StopEvent:
-        # do something here
-        return StopEvent(result="Hello, world!")
-
-
-w = MyWorkflow(timeout=10, verbose=False)
-result = await w.run()
-print(result)
-This will simply print "Hello, World!" to the console.
-
-In this code we:
-
-Define a class MyWorkflow that inherits from Workflow
-Use the @step decorator to define a single step my_step
-The step takes a single argument, ev, which is an instance of StartEvent
-The step returns a StopEvent with a result of "Hello, world!"
-We create an instance of MyWorkflow with a timeout of 10 seconds and verbosity off
-We run the workflow and print the result
-Type annotations for steps#
-The type annotations (e.g. ev: StartEvent) and -> StopEvent are essential to the way Workflows work. The expected types determine what event types will trigger a step. Tools like the visualizer (see below) also rely on these annotations to determine what types are generated and therefore where control flow goes next.
-
-Type annotations are validated at compile time, so you will get an error message if for instance you emit an event that is never consumed by another step.
-
-Start and Stop events#
-StartEvent and StopEvent are special events that are used to start and stop a workflow. Any step that accepts a StartEvent will be triggered by the run command. Emitting a StopEvent will end the execution of the workflow and return a final result, even if other steps remain un-executed.
-
-Running a workflow in regular python#
-Workflows are async by default, so you use await to get the result of the run command. This will work fine in a notebook environment; in a vanilla python script you will need to import asyncio and wrap your code in an async function, like this:
-
-
-async def main():
-    w = MyWorkflow(timeout=10, verbose=False)
-    result = await w.run()
-    print(result)
-
-
-if __name__ == "__main__":
-    import asyncio
-
-    asyncio.run(main())
-In the remaining examples in this tutorial we will assume an async environment for simplicity.
-
-Visualizing a workflow#
-A great feature of workflows is the built-in visualizer, which we already installed. Let's visualize the simple workflow we just created:
-
-
-from llama_index.utils.workflow import draw_all_possible_flows
-
-draw_all_possible_flows(
-    MyWorkflow,
-    filename="basic_workflow.html",
-    # Optional, can limit long event names in your workflow
-    # Can help with readability
-    # max_label_length=10,
-)
-This will create a file called basic_workflow.html in the current directory. Open it in your browser to see an interactive, visual representation of the workflow. It will look something like this:
-
-Basic workflow
-
-Of course, a flow with a single step is not very useful! Let's define a multi-step workflow.
-
-Custom Events#
-Multiple steps are created by defining custom events that can be emitted by steps and trigger other steps. Let's define a simple 3-step workflow.
-
-We bring in our imports as before, plus a new import for Event:
-
-
-from llama_index.core.workflow import (
-    StartEvent,
-    StopEvent,
-    Workflow,
-    step,
-    Event,
-)
-from llama_index.utils.workflow import draw_all_possible_flows
-Now we define two custom events, FirstEvent and SecondEvent. These classes can have any names and properties, but must inherit from Event:
-
-
-class FirstEvent(Event):
-    first_output: str
-
-
-class SecondEvent(Event):
-    second_output: str
-Defining the workflow#
-Now we define the workflow itself. We do this by defining the input and output types on each step.
-
-step_one takes a StartEvent and returns a FirstEvent
-step_two takes a FirstEvent and returns a SecondEvent
-step_three takes a SecondEvent and returns a StopEvent
-
-class MyWorkflow(Workflow):
-    @step
-    async def step_one(self, ev: StartEvent) -> FirstEvent:
-        print(ev.first_input)
+@step
+async def step_one(self, ev: StartEvent | LoopEvent) -> FirstEvent | LoopEvent:
+    if random.randint(0, 1) == 0:
+        print("Bad thing happened")
+        return LoopEvent(loop_output="Back to step one.")
+    else:
+        print("Good thing happened")
         return FirstEvent(first_output="First step complete.")
+Let's visualize this:
+
+A simple loop
+
+You can create a loop from any step to any other step by defining the appropriate event types and return types.
+
+Branches in workflows#
+Closely related to looping is branching. As you've already seen, you can conditionally return different events. Let's see a workflow that branches into two different paths:
+
+
+class BranchA1Event(Event):
+    payload: str
+
+
+class BranchA2Event(Event):
+    payload: str
+
+
+class BranchB1Event(Event):
+    payload: str
+
+
+class BranchB2Event(Event):
+    payload: str
+
+
+class BranchWorkflow(Workflow):
+    @step
+    async def start(self, ev: StartEvent) -> BranchA1Event | BranchB1Event:
+        if random.randint(0, 1) == 0:
+            print("Go to branch A")
+            return BranchA1Event(payload="Branch A")
+        else:
+            print("Go to branch B")
+            return BranchB1Event(payload="Branch B")
 
     @step
-    async def step_two(self, ev: FirstEvent) -> SecondEvent:
-        print(ev.first_output)
-        return SecondEvent(second_output="Second step complete.")
+    async def step_a1(self, ev: BranchA1Event) -> BranchA2Event:
+        print(ev.payload)
+        return BranchA2Event(payload=ev.payload)
 
     @step
-    async def step_three(self, ev: SecondEvent) -> StopEvent:
-        print(ev.second_output)
-        return StopEvent(result="Workflow complete.")
+    async def step_b1(self, ev: BranchB1Event) -> BranchB2Event:
+        print(ev.payload)
+        return BranchB2Event(payload=ev.payload)
 
+    @step
+    async def step_a2(self, ev: BranchA2Event) -> StopEvent:
+        print(ev.payload)
+        return StopEvent(result="Branch A complete.")
 
-w = MyWorkflow(timeout=10, verbose=False)
-result = await w.run(first_input="Start the workflow.")
-print(result)
-The full output will be
+    @step
+    async def step_b2(self, ev: BranchB2Event) -> StopEvent:
+        print(ev.payload)
+        return StopEvent(result="Branch B complete.")
+Our imports are the same as before, but we've created 4 new event types. start randomly decides to take one branch or another, and then multiple steps in each branch complete the workflow. Let's visualize this:
 
+A simple branch
 
-Start the workflow.
-First step complete.
-Second step complete.
-Workflow complete.
-And we can use our visualizer to see all possible flows through this workflow:
+You can of course combine branches and loops in any order to fulfill the needs of your application. Later in this tutorial you'll learn how to run multiple branches in parallel using send_event and synchronize them using collect_events.
 
-
-from llama_index.utils.workflow import draw_all_possible_flows
-
-draw_all_possible_flows(MyWorkflow, filename="multi_step_workflow.html")
-A simple multi-step workflow
-
-Of course there is still not much point to a workflow if you just run through it from beginning to end! Let's do some branching and looping.
+Up next we'll learn about maintaining state with Context.
