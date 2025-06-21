@@ -79,3 +79,9 @@ A simple branch
 You can of course combine branches and loops in any order to fulfill the needs of your application. Later in this tutorial you'll learn how to run multiple branches in parallel using send_event and synchronize them using collect_events.
 
 Up next we'll learn about maintaining state with Context.
+
+
+
+
+
+https://github.com/pinecone-io/examples/blob/master/learn/generation/llama-index/llama-index-research-agent.ipynb
